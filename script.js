@@ -2,12 +2,31 @@
 const imageContainer = document.getElementById("image-container");
 const loader = document.getElementById("loader");
 
+let ready = false;
+let imagesLoaded = 0;
+let totalImages = 0;
 const photosArray = [];
 
 // Unsplash Api Information
-const count = 10;
+let imageToLoad = 5;
+let initialLoad = true;
 const apiKey = "U197PNUIMO4da5evgBICFds0nSRbKlloZfFOVpE7868";
-const unsplashUrl = `https://api.unsplash.com/photos/random?client_id=${apiKey}&count=${count}`
+let unsplashUrl = `https://api.unsplash.com/photos/random?client_id=${apiKey}&count=${imageToLoad}`;
+
+// Create image loader function
+function imageLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded === totalImages) {
+        ready = true;
+        loader.hidden = true;
+        initialLoad = false;
+
+        if (!initialLoad && imageToLoad === 5) {
+            imageToLoad = 30;
+            unsplashUrl = `https://api.unsplash.com/photos/random?client_id=${apiKey}&count=${imageToLoad}`;
+        }
+    }
+}
 
 // Helper functions 
 function setAttributes(element, attributes) {
@@ -18,6 +37,8 @@ function setAttributes(element, attributes) {
 
 // Create anchor tag with image inside and attach it to image container
 function displayPhotos() {
+    imagesLoaded = 0;
+    totalImages = this.photosArray.length;
     // Go trough all photos from the response
     this.photosArray.forEach(photo => {
         // Create an <a> for the image
@@ -33,6 +54,8 @@ function displayPhotos() {
             alt: photo.description,
             title: photo.description,
         });
+        // Add load function to image tag
+        imageTag.addEventListener("load", imageLoaded);
 
         // Put <img> inside <a>, then both inside image container
         anchorTag.appendChild(imageTag);
@@ -49,7 +72,15 @@ async function getPhotos() {
     } catch (error) {
         // Catch error here
     }
-} 
+}
+
+// Check if reach the bottom of page and load more photos
+window.addEventListener("scroll", () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000 && ready) {
+        ready = false;
+        getPhotos();
+    }
+});
 
 // On Load
 getPhotos();
